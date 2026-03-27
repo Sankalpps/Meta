@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 
 from .environment import IntersectionEnv
 from .models import Action
@@ -10,12 +11,48 @@ env = IntersectionEnv()
 
 
 @app.get("/")
-def index() -> dict:
-    return {
-        "name": "openenv-intersection-emergency",
-        "api": ["/reset", "/step", "/state", "/tasks"],
-        "task_count": len(env.task_ids),
-    }
+def index() -> HTMLResponse:
+        html = """
+        <!doctype html>
+        <html>
+            <head>
+                <meta charset=\"utf-8\" />
+                <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
+                <title>OpenEnv Intersection</title>
+                <style>
+                    body { font-family: Segoe UI, Arial, sans-serif; margin: 24px; background: #f6f8fb; color: #111; }
+                    .card { background: #fff; border-radius: 12px; padding: 18px; box-shadow: 0 2px 10px rgba(0,0,0,.08); max-width: 900px; }
+                    h1 { margin-top: 0; }
+                    code { background: #eef2ff; padding: 2px 6px; border-radius: 6px; }
+                    button { margin-right: 8px; padding: 8px 12px; border: 0; border-radius: 8px; background: #0f62fe; color: #fff; cursor: pointer; }
+                    pre { background: #101828; color: #e5efff; padding: 12px; border-radius: 10px; overflow: auto; }
+                </style>
+            </head>
+            <body>
+                <div class=\"card\">
+                    <h1>OpenEnv Multi-Agent 4-Way Intersection</h1>
+                    <p>This Space runs the emergency-priority traffic environment.</p>
+                    <p>API: <code>/reset</code>, <code>/step</code>, <code>/state</code>, <code>/tasks</code></p>
+                    <button onclick=\"loadTasks()\">Load Tasks</button>
+                    <button onclick=\"resetEasy()\">Reset Easy Task</button>
+                    <button onclick=\"loadState()\">Load State</button>
+                    <pre id=\"out\">Click a button to query the environment.</pre>
+                </div>
+                <script>
+                    const out = document.getElementById('out');
+                    async function render(url, options) {
+                        const res = await fetch(url, options);
+                        const data = await res.json();
+                        out.textContent = JSON.stringify(data, null, 2);
+                    }
+                    function loadTasks() { render('/tasks'); }
+                    function resetEasy() { render('/reset?task_id=easy_single_ambulance', { method: 'POST' }); }
+                    function loadState() { render('/state'); }
+                </script>
+            </body>
+        </html>
+        """
+        return HTMLResponse(content=html)
 
 
 @app.get("/tasks")
