@@ -1,0 +1,35 @@
+name: openenv-email-triage
+version: 0.1.0
+description: Real-world email triage environment for autonomous agent training and evaluation.
+license: mit
+tags:
+  - openenv
+  - customer-support
+  - operations
+  - email-triage
+entrypoint: src/openenv_email_triage/environment.py:EmailTriageEnv
+api:
+  reset: true
+  step: true
+  state: true
+models:
+  observation: src/openenv_email_triage/models.py:Observation
+  action: src/openenv_email_triage/models.py:Action
+  reward: src/openenv_email_triage/models.py:Reward
+tasks:
+  - id: easy_invoice_spam
+    difficulty: easy
+    grader: src/openenv_email_triage/graders.py:grade_easy
+  - id: medium_ops_queue
+    difficulty: medium
+    grader: src/openenv_email_triage/graders.py:grade_medium
+  - id: hard_risk_and_vip
+    difficulty: hard
+    grader: src/openenv_email_triage/graders.py:grade_hard
+runtime:
+  max_steps_default: 12
+  deterministic: true
+deployment:
+  platform: huggingface-spaces
+  sdk: docker
+  app_file: src/openenv_email_triage/app.py
