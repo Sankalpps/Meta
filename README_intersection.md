@@ -69,9 +69,9 @@ set PYTHONPATH=src
 python -m uvicorn openenv_intersection.app:app --host 0.0.0.0 --port 7860
 ```
 
-## Docker Hint
+## Docker
 
-Current `Dockerfile` points to the email-triage app. To deploy this intersection app, change container command to:
+Current `Dockerfile` already launches this intersection app:
 
 ```text
 uvicorn openenv_intersection.app:app --host 0.0.0.0 --port 7860

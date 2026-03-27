@@ -1,98 +1,104 @@
 ---
-title: OpenEnv Email Triage
+title: OpenEnv Multi-Agent Intersection Control
 sdk: docker
 app_port: 7860
 tags:
   - openenv
-  - email-triage
-  - reinforcement-learning
+  - traffic-control
+  - multi-agent
+  - emergency-priority
 ---
 
-# OpenEnv Email Triage
+# OpenEnv Multi-Agent Intersection Control
 
-A complete, real-world OpenEnv environment where an AI agent learns to triage operational inboxes.
+A complete real-world OpenEnv environment where an AI system manages a four-way urban intersection and prioritizes emergency vehicles.
 
-This environment simulates work that human support and operations teams perform every day:
+## Real-World Task Simulation
 
-- detect spam and phishing
-- route legal/security issues to the right teams
-- prioritize urgent incidents
-- draft useful customer replies
+This environment models a real operational task performed by traffic control centers:
 
-It implements standard `step()` / `reset()` / `state()` APIs with typed Pydantic models, deterministic task graders, shaped rewards, baseline inference, and containerized deployment for Hugging Face Spaces.
+- optimize vehicle throughput at a 4-way intersection
+- prevent unsafe conflicting green phases
+- prioritize emergency vehicles (ambulance/fire/police) with minimal delay
+- maintain fairness under congestion waves
 
-## Why This Environment
+This is not a toy game; it simulates a practical safety-critical control problem.
 
-Email triage is a practical autonomy benchmark: agents must classify intent, make safe routing decisions, and communicate clearly under step budgets. The task naturally supports partial credit and policy penalties.
+## OpenEnv Spec Compliance
 
-## OpenEnv API
+Core environment class: `IntersectionEnv` in `src/openenv_intersection/environment.py`.
 
-Core environment class: `EmailTriageEnv` in `src/openenv_email_triage/environment.py`.
+Implemented API:
 
 - `reset(task_id: Optional[str]) -> Observation`
 - `step(action: Action) -> tuple[Observation, Reward, bool, dict]`
 - `state() -> EnvState`
 
-Typed models are defined in `src/openenv_email_triage/models.py`:
+Typed Pydantic models in `src/openenv_intersection/models.py`:
 
 - `Observation`
 - `Action`
 - `Reward`
 - `EnvState`
 
-Metadata is in `openenv.yaml`.
+Metadata file for validators: `openenv.yaml`.
 
-## Action Space
+## Action and Observation Spaces
 
-`Action` supports:
+Action space:
 
-- `classify` (`email_id`, `label`)
-- `set_priority` (`email_id`, `priority`)
-- `draft_reply` (`email_id`, `message`)
-- `archive` (`email_id`)
-- `escalate` (`email_id`, `team`)
-- `noop` (`reason` optional)
+- `set_phase` with 4 directional light assignments
+- `preempt_emergency` for targeted emergency corridor control
+- `hold` for keeping current phase briefly
 
-Labels: `billing`, `technical`, `sales`, `hr`, `spam`, `other`.
+Observation space includes:
 
-Priority values: `low`, `medium`, `high`.
+- per-direction queue lengths
+- per-direction signal state
+- active emergency vehicles (`eta_steps`, `waited_steps`, `crossed`)
+- throughput and safety violations
+- recent events
 
-## Observation Space
+## Tasks and Agent Graders (Easy -> Hard)
 
-`Observation` contains:
+All tasks are deterministic and scored by a programmatic grader (`0.0` to `1.0`) in `src/openenv_intersection/graders.py`.
 
-- current task id and instruction
-- step count and max steps
-- inbox snapshot (email objects with mutable fields)
-- recent action history
+1. `easy_single_ambulance` (easy)
+- moderate traffic with one ambulance event
+- objective: clear emergency quickly while keeping steady flow
 
-## Tasks and Graders
+2. `medium_peak_with_firetruck` (medium)
+- peak-hour arrival surges with one firetruck event
+- objective: maintain safety and reduce congestion while prioritizing emergency
 
-All tasks are deterministic and scored from `0.0` to `1.0` by programmatic graders in `src/openenv_email_triage/graders.py`.
+3. `hard_dual_emergency_wave` (hard)
+- sustained congestion plus two conflicting emergency events
+- objective: coordinate safe preemption and balanced control under pressure
 
-1. `easy_invoice_spam` (easy)
-- classify/clear obvious spam
-- correctly triage and respond to invoice issue
+## Meaningful Reward Function
 
-2. `medium_ops_queue` (medium)
-- route outage to engineering
-- prioritize incident correctly
-- respond to sales lead and classify HR query
+The reward provides dense trajectory-level signal:
 
-3. `hard_risk_and_vip` (hard)
-- identify phishing and escalate to security
-- route legal risk properly with timeline response
-- handle VIP P1 issue with escalation and ETA communication
+- positive: grader progress delta and vehicles moved
+- penalties: conflicting greens, invalid phases, blocked emergency paths
+- terminal bonus: objective completion with strong score
 
-## Reward Function
+This supports incremental learning and discourages undesirable policies.
 
-Reward is shaped across the whole trajectory:
+## Baseline Inference Script
 
-- primary signal: grader progress delta at each step
-- completion bonus when objective reaches full score
-- penalties for invalid actions, missing email ids, unnecessary archive behavior (hard task), and `noop` loops
+- Script: `scripts/run_intersection_baseline.py`
+- Uses OpenAI API when `OPENAI_API_KEY` is available
+- Falls back to deterministic heuristic policy when key is missing/invalid
+- Outputs reproducible per-task scores and average
 
-This provides dense partial credit while discouraging destructive or unproductive behavior.
+Run:
+
+```bash
+# Windows PowerShell
+$env:OPENAI_API_KEY='your_key_here'
+.\.venv\Scripts\python.exe scripts/run_intersection_baseline.py --model gpt-4.1-mini
+```
 
 ## Setup
 
@@ -110,78 +116,52 @@ set PYTHONPATH=src
 
 ## Local Usage
 
-Run API server:
+Run server:
 
 ```bash
-uvicorn openenv_email_triage.app:app --host 0.0.0.0 --port 7860
+python -m uvicorn openenv_intersection.app:app --host 0.0.0.0 --port 7860
 ```
 
-Run tests:
+Test suite:
 
 ```bash
 pytest -q
 ```
 
-Validate metadata (if OpenEnv CLI installed):
+Optional validator (if official OpenEnv CLI is installed):
 
 ```bash
 openenv validate
 ```
 
-## Baseline Inference Script
+## Docker and Hugging Face Spaces
 
-Baseline runner (`scripts/run_baseline.py`) uses the OpenAI API client and reads credentials from `OPENAI_API_KEY`.
-
-```bash
-set OPENAI_API_KEY=your_key_here
-python scripts/run_baseline.py --model gpt-4.1-mini
-```
-
-The script runs all 3 tasks with deterministic prompting (`temperature=0`, fixed seed) and prints per-task + average scores.
-
-### Reproducible Baseline Scores
-
-Expected baseline range with `gpt-4.1-mini` and default prompts:
-
-- `easy_invoice_spam`: `0.8 - 1.0`
-- `medium_ops_queue`: `0.6 - 0.85`
-- `hard_risk_and_vip`: `0.45 - 0.75`
-- average: `~0.62 - 0.87`
-
-Exact score can vary slightly across model snapshots, but setup and task data are deterministic.
-
-## Docker
-
-Build and run:
+Build and run locally:
 
 ```bash
-docker build -t openenv-email-triage .
-docker run --rm -p 7860:7860 openenv-email-triage
+docker build -t openenv-intersection .
+docker run --rm -p 7860:7860 openenv-intersection
 ```
 
-The container starts a FastAPI app on port `7860`.
+Space URL:
 
-## Hugging Face Spaces Deployment (Docker)
+- `https://huggingface.co/spaces/Sankalpps/openenv-email-triage`
 
-1. Create a new Space with **SDK = Docker**.
-2. Push this repository to the Space.
-3. In Space settings, add tag `openenv`.
-4. Optionally add secret `OPENAI_API_KEY` for running baseline scripts in the Space.
-5. Space builds from the included `Dockerfile` and serves the API.
+The current `Dockerfile` launches `openenv_intersection.app:app`.
 
 ## Project Structure
 
 ```text
-src/openenv_email_triage/
+src/openenv_intersection/
   app.py
   baseline.py
   environment.py
   graders.py
   models.py
   tasks.py
-scripts/run_baseline.py
+scripts/run_intersection_baseline.py
 openenv.yaml
 Dockerfile
 README.md
-tests/test_env.py
+tests/test_intersection_env.py
 ```
