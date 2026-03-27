@@ -1,0 +1,33 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from .models import EnvState
+
+
+@dataclass(frozen=True)
+class GradeResult:
+    score: float
+    breakdown: dict[str, float]
+
+
+def grade_task(state: EnvState) -> GradeResult:
+    crossed_emergency = sum(1 for e in state.emergency_vehicles if e.crossed)
+    total_emergency = max(1, len(state.emergency_vehicles))
+    emergency_wait = sum(e.waited_steps for e in state.emergency_vehicles)
+
+    total_queued = sum(state.queues.values())
+    avg_wait_norm = min(1.0, state.total_wait / max(1, state.step_count * 20))
+    queue_norm = min(1.0, total_queued / 80)
+
+    components = {
+        "emergency_priority": 0.45 * (crossed_emergency / total_emergency),
+        "throughput": 0.25 * min(1.0, state.throughput / max(1, state.step_count * 3)),
+        "low_wait": 0.15 * (1.0 - avg_wait_norm),
+        "queue_control": 0.1 * (1.0 - queue_norm),
+        "safety": 0.05 if state.safety_violations == 0 else 0.0,
+    }
+
+    penalty = min(0.3, emergency_wait / 100)
+    score = max(0.0, min(1.0, round(sum(components.values()) - penalty, 4)))
+    return GradeResult(score=score, breakdown=components)
