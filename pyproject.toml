@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openenv-intersection-emergency"
+version = "0.1.0"
+description = "OpenEnv multi-agent 4-way intersection with emergency vehicle prioritization"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115.0",
+  "openenv-core>=0.2.0",
+  "openai>=1.54.0",
+  "pydantic>=2.9.0",
+  "python-dotenv>=1.0.1",
+  "uvicorn[standard]>=0.32.0",
+]
+
+[project.scripts]
+server = "server.app:main"
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3.0",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src", "."]
+include = ["openenv_intersection*", "openenv_email_triage*", "server*"]
