@@ -1,15 +1,6 @@
-<<<<<<< HEAD
 fastapi>=0.115.0
 openai>=1.54.0
 pydantic>=2.9.0
 python-dotenv>=1.0.1
 uvicorn[standard]>=0.32.0
 pytest>=8.3.0
-=======
-fastapi>=0.115.0
-openai>=1.54.0
-pydantic>=2.9.0
-python-dotenv>=1.0.1
-uvicorn[standard]>=0.32.0
-pytest>=8.3.0
->>>>>>> 6d513dca441eccedd7df32d75f565ad9c470a888
