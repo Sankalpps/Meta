@@ -1,6 +1,15 @@
+<<<<<<< HEAD
 .venv/
 __pycache__/
 .pytest_cache/
 *.pyc
 *.pyo
 *.pyd
+=======
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.pyo
+*.pyd
+>>>>>>> 6d513dca441eccedd7df32d75f565ad9c470a888

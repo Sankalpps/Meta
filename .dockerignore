@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 __pycache__/
 *.pyc
 *.pyo
@@ -6,3 +7,13 @@ __pycache__/
 .venv/
 .git/
 .gitignore
+=======
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pytest_cache/
+.venv/
+.git/
+.gitignore
+>>>>>>> 6d513dca441eccedd7df32d75f565ad9c470a888

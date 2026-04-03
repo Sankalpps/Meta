@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 name: openenv-intersection-emergency
 version: 0.1.0
 description: Multi-agent 4-way traffic intersection control with emergency vehicle prioritization.
@@ -33,3 +34,40 @@ deployment:
   platform: huggingface-spaces
   sdk: docker
   app_file: src/openenv_intersection/app.py
+=======
+name: openenv-intersection-emergency
+version: 0.1.0
+description: Multi-agent 4-way traffic intersection control with emergency vehicle prioritization.
+license: mit
+tags:
+  - openenv
+  - traffic-control
+  - multi-agent
+  - emergency-priority
+entrypoint: src/openenv_intersection/environment.py:IntersectionEnv
+api:
+  reset: true
+  step: true
+  state: true
+models:
+  observation: src/openenv_intersection/models.py:Observation
+  action: src/openenv_intersection/models.py:Action
+  reward: src/openenv_intersection/models.py:Reward
+tasks:
+  - id: easy_single_ambulance
+    difficulty: easy
+    grader: src/openenv_intersection/graders.py:grade_task
+  - id: medium_peak_with_firetruck
+    difficulty: medium
+    grader: src/openenv_intersection/graders.py:grade_task
+  - id: hard_dual_emergency_wave
+    difficulty: hard
+    grader: src/openenv_intersection/graders.py:grade_task
+runtime:
+  deterministic: true
+  max_steps_default: 24
+deployment:
+  platform: huggingface-spaces
+  sdk: docker
+  app_file: src/openenv_intersection/app.py
+>>>>>>> 6d513dca441eccedd7df32d75f565ad9c470a888
