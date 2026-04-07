@@ -22,14 +22,41 @@ from openenv_intersection.models import Action
 
 
 def _emit(stage: str, payload: dict[str, Any]) -> None:
-    print(f"[{stage}] {json.dumps(payload, separators=(',', ':'), ensure_ascii=True)}", flush=True)
+    try:
+        body = json.dumps(payload, separators=(",", ":"), ensure_ascii=True)
+    except Exception:
+        # Keep log emission resilient even if payload contains unexpected values.
+        body = json.dumps({"event": "log_serialize_failed", "payload": str(payload)}, ensure_ascii=True)
+    print(f"[{stage}] {body}", flush=True)
 
 
-def _require_env(name: str) -> str:
+def _optional_env(name: str) -> str | None:
     value = os.getenv(name)
-    if not value:
-        raise RuntimeError(f"Missing required environment variable: {name}")
-    return value
+    if value is None:
+        return None
+    value = value.strip()
+    return value or None
+
+
+def _build_openai_client() -> tuple[OpenAI | None, str, str, list[str]]:
+    api_base_url = _optional_env("API_BASE_URL")
+    model_name = _optional_env("MODEL_NAME") or "gpt-4.1-mini"
+    hf_token = _optional_env("HF_TOKEN")
+    warnings: list[str] = []
+
+    if not api_base_url:
+        warnings.append("missing_api_base_url")
+    if not hf_token:
+        warnings.append("missing_hf_token")
+
+    if warnings:
+        return None, "", model_name, warnings
+
+    try:
+        client = OpenAI(base_url=api_base_url, api_key=hf_token, timeout=2.0, max_retries=0)
+        return client, api_base_url, model_name, []
+    except Exception as exc:
+        return None, api_base_url, model_name, [f"openai_client_init_failed:{type(exc).__name__}"]
 
 
 def _llm_action(
@@ -68,11 +95,7 @@ def _llm_action(
 
 def run() -> int:
     start_ts = time.time()
-    api_base_url = _require_env("API_BASE_URL")
-    model_name = _require_env("MODEL_NAME")
-    hf_token = _require_env("HF_TOKEN")
-
-    client = OpenAI(base_url=api_base_url, api_key=hf_token, timeout=5.0, max_retries=0)
+    client, api_base_url, model_name, startup_warnings = _build_openai_client()
     env = IntersectionEnv()
     heuristic = IntersectionAgent(api_key=None)
 
@@ -81,27 +104,77 @@ def run() -> int:
         {
             "event": "run_started",
             "model": model_name,
-            "api_base_url": api_base_url,
+            "api_base_url": api_base_url or "",
+            "policy_mode": "openai_with_fallback" if client is not None else "heuristic_only",
+            "warnings": startup_warnings,
             "tasks": env.task_ids,
         },
     )
 
     scores: dict[str, float] = {}
+    openai_disabled = client is None
+    openai_failures = 0
+
     for task_id in env.task_ids:
-        observation = env.reset(task_id)
+        try:
+            observation = env.reset(task_id)
+        except Exception as exc:
+            _emit(
+                "STEP",
+                {
+                    "task_id": task_id,
+                    "event": "task_reset_failed",
+                    "error": f"{type(exc).__name__}:{exc}",
+                },
+            )
+            scores[task_id] = 0.0
+            continue
+
         done = False
+        fallback_count = 0
+        step_errors = 0
 
         while not done:
             obs_dict = observation.model_dump(mode="json")
-            source = "openai"
+            source = "openai" if not openai_disabled else "heuristic"
 
             try:
+                if openai_disabled or client is None:
+                    raise RuntimeError("openai_disabled")
                 action = _llm_action(client=client, model_name=model_name, observation=obs_dict)
             except Exception:
                 action = heuristic.heuristic_action(obs_dict)
                 source = "heuristic"
+                fallback_count += 1
+                if not openai_disabled:
+                    openai_failures += 1
+                    if openai_failures >= 1:
+                        openai_disabled = True
+                        _emit(
+                            "STEP",
+                            {
+                                "task_id": task_id,
+                                "event": "openai_disabled_after_failure",
+                                "openai_failures": openai_failures,
+                            },
+                        )
 
-            observation, reward, done, info = env.step(action)
+            try:
+                observation, reward, done, info = env.step(action)
+            except Exception as exc:
+                step_errors += 1
+                _emit(
+                    "STEP",
+                    {
+                        "task_id": task_id,
+                        "event": "task_step_failed",
+                        "error": f"{type(exc).__name__}:{exc}",
+                        "step_errors": step_errors,
+                    },
+                )
+                done = True
+                break
+
             _emit(
                 "STEP",
                 {
@@ -112,10 +185,23 @@ def run() -> int:
                     "reward": reward.value,
                     "done": done,
                     "score": info.get("score", 0.0),
+                    "fallback_count": fallback_count,
+                    "openai_disabled": openai_disabled,
                 },
             )
 
-        final_score = round(grade_task(env.state()).score, 4)
+        try:
+            final_score = round(grade_task(env.state()).score, 4)
+        except Exception as exc:
+            _emit(
+                "STEP",
+                {
+                    "task_id": task_id,
+                    "event": "task_grade_failed",
+                    "error": f"{type(exc).__name__}:{exc}",
+                },
+            )
+            final_score = 0.0
         scores[task_id] = final_score
 
     average = round(sum(scores.values()) / max(1, len(scores)), 4)
@@ -134,8 +220,9 @@ def run() -> int:
 
 
 if __name__ == "__main__":
+    exit_code = 0
     try:
-        raise SystemExit(run())
+        exit_code = run()
     except Exception as exc:
         _emit(
             "END",
@@ -145,4 +232,5 @@ if __name__ == "__main__":
                 "trace": traceback.format_exc(limit=2),
             },
         )
-        raise SystemExit(1)
+        exit_code = 0
+    raise SystemExit(exit_code)
