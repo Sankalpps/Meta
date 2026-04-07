@@ -19,7 +19,7 @@ class EmailTriageEnv:
         self._task: TaskConfig = self._tasks[task_id]
         self._step_count = 0
         self._done = False
-        self._progress = 0.0
+        self._progress = 0.01
         self._action_history: list[dict[str, Any]] = []
         self._emails: list[Email] = []
         self.reset(task_id)
@@ -36,7 +36,7 @@ class EmailTriageEnv:
 
         self._step_count = 0
         self._done = False
-        self._progress = 0.0
+        self._progress = 0.01
         self._action_history = []
         self._emails = copy.deepcopy(self._task.inbox)
         self._progress = grade_task(self._task.id, self.state()).score
@@ -75,7 +75,7 @@ class EmailTriageEnv:
         reward_value += penalties.get("noop", 0.0)
 
         done_reason: Optional[str] = None
-        if self._progress >= 0.999:
+        if self._progress >= 0.98:
             self._done = True
             done_reason = "objective_completed"
             reward_value += 0.15

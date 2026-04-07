@@ -18,9 +18,25 @@ def index() -> dict:
     }
 
 
+from .tasks import load_tasks
+
+task_configs = load_tasks()
+
 @app.get("/tasks")
 def tasks() -> dict:
-    return {"tasks": env.task_ids}
+    return {
+        "tasks": [
+            {
+                "id": t.id,
+                "title": t.title,
+                "difficulty": t.difficulty,
+                "max_steps": t.max_steps,
+                "instruction": t.instruction,
+                "grader": f"src/openenv_email_triage/graders.py:grade_{t.difficulty}",
+            }
+            for t in task_configs.values()
+        ]
+    }
 
 
 @app.post("/reset")

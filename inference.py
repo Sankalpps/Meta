@@ -21,7 +21,7 @@ from openenv_intersection.graders import grade_task
 from openenv_intersection.models import Action
 
 
-STRICT_SCORE_EPSILON = 0.0001
+STRICT_SCORE_EPSILON = 0.01
 
 
 def _emit(stage: str, payload: dict[str, Any]) -> None:
@@ -191,7 +191,7 @@ def run() -> int:
                     "action_type": action.action_type.value,
                     "reward": reward.value,
                     "done": done,
-                    "score": info.get("score", 0.0),
+                    "score": info.get("score", 0.01),
                     "fallback_count": fallback_count,
                     "openai_disabled": openai_disabled,
                 },

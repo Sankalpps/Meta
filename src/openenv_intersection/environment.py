@@ -26,7 +26,7 @@ class IntersectionEnv:
         self._task: TaskConfig = self._tasks[task_id]
         self._step_count = 0
         self._done = False
-        self._progress = 0.0
+        self._progress = 0.01
         self._throughput = 0
         self._total_wait = 0
         self._safety_violations = 0

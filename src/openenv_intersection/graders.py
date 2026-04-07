@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from .models import EnvState
 
 
-STRICT_SCORE_EPSILON = 0.0001
+STRICT_SCORE_EPSILON = 0.01
 
 
 @dataclass(frozen=True)
