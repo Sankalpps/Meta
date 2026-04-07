@@ -38,3 +38,15 @@ def grade_task(state: EnvState) -> GradeResult:
     penalty = min(0.3, emergency_wait / 100)
     score = _strict_unit_interval(round(sum(components.values()) - penalty, 4))
     return GradeResult(score=score, breakdown=components)
+
+
+def grade_easy_single_ambulance(state: EnvState) -> GradeResult:
+    return grade_task(state)
+
+
+def grade_medium_peak_with_firetruck(state: EnvState) -> GradeResult:
+    return grade_task(state)
+
+
+def grade_hard_dual_emergency_wave(state: EnvState) -> GradeResult:
+    return grade_task(state)

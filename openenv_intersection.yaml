@@ -19,13 +19,13 @@ models:
 tasks:
   - id: easy_single_ambulance
     difficulty: easy
-    grader: src/openenv_intersection/graders.py:grade_task
+    grader: src/openenv_intersection/graders.py:grade_easy_single_ambulance
   - id: medium_peak_with_firetruck
     difficulty: medium
-    grader: src/openenv_intersection/graders.py:grade_task
+    grader: src/openenv_intersection/graders.py:grade_medium_peak_with_firetruck
   - id: hard_dual_emergency_wave
     difficulty: hard
-    grader: src/openenv_intersection/graders.py:grade_task
+    grader: src/openenv_intersection/graders.py:grade_hard_dual_emergency_wave
 runtime:
   deterministic: true
   max_steps_default: 24

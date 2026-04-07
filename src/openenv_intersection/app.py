@@ -14,6 +14,12 @@ app = FastAPI(title="OpenEnv 4-Way Intersection", version="0.1.0")
 env = IntersectionEnv()
 task_configs = load_tasks()
 
+TASK_GRADER_BY_ID = {
+    "easy_single_ambulance": "src/openenv_intersection/graders.py:grade_easy_single_ambulance",
+    "medium_peak_with_firetruck": "src/openenv_intersection/graders.py:grade_medium_peak_with_firetruck",
+    "hard_dual_emergency_wave": "src/openenv_intersection/graders.py:grade_hard_dual_emergency_wave",
+}
+
 
 def _action_requirements() -> dict[str, list[str]]:
     return {
@@ -80,6 +86,7 @@ def tasks() -> dict:
                 "difficulty": t.difficulty,
                 "max_steps": t.max_steps,
                 "instruction": t.instruction,
+                "grader": TASK_GRADER_BY_ID[t.id],
             }
             for t in task_configs.values()
         ],
