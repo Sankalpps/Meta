@@ -5,10 +5,17 @@ from dataclasses import dataclass
 from .models import EnvState
 
 
+STRICT_SCORE_EPSILON = 0.0001
+
+
 @dataclass(frozen=True)
 class GradeResult:
     score: float
     breakdown: dict[str, float]
+
+
+def _strict_unit_interval(score: float) -> float:
+    return min(1.0 - STRICT_SCORE_EPSILON, max(STRICT_SCORE_EPSILON, score))
 
 
 def grade_task(state: EnvState) -> GradeResult:
@@ -29,5 +36,5 @@ def grade_task(state: EnvState) -> GradeResult:
     }
 
     penalty = min(0.3, emergency_wait / 100)
-    score = max(0.0, min(1.0, round(sum(components.values()) - penalty, 4)))
+    score = _strict_unit_interval(round(sum(components.values()) - penalty, 4))
     return GradeResult(score=score, breakdown=components)

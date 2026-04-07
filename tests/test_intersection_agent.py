@@ -51,7 +51,7 @@ def test_grader_endpoint_returns_score_range() -> None:
 
     assert response.status_code == 200
     payload = response.json()
-    assert 0.0 <= payload["score"] <= 1.0
+    assert 0.0 < payload["score"] < 1.0
 
 
 def test_baseline_endpoint_runs() -> None:

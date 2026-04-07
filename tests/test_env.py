@@ -34,7 +34,7 @@ def test_easy_task_can_reach_full_score() -> None:
         _, _, done, info = env.step(action)
 
     assert done is True
-    assert info["score"] == 1.0
+    assert 0.999 <= info["score"] < 1.0
 
 
 def test_invalid_email_action_gets_penalty() -> None:

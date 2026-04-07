@@ -28,7 +28,7 @@ def test_phase_conflict_penalty() -> None:
 
     _, reward, _, info = env.step(action)
     assert reward.penalties.get("signal_conflict", 0.0) < 0
-    assert info["score"] <= 1.0
+    assert 0.0 < info["score"] < 1.0
 
 
 def test_emergency_preempt_improves_progress() -> None:

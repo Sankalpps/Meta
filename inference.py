@@ -21,6 +21,9 @@ from openenv_intersection.graders import grade_task
 from openenv_intersection.models import Action
 
 
+STRICT_SCORE_EPSILON = 0.0001
+
+
 def _emit(stage: str, payload: dict[str, Any]) -> None:
     try:
         body = json.dumps(payload, separators=(",", ":"), ensure_ascii=True)
@@ -36,6 +39,10 @@ def _optional_env(name: str) -> str | None:
         return None
     value = value.strip()
     return value or None
+
+
+def _strict_score(score: float) -> float:
+    return round(min(1.0 - STRICT_SCORE_EPSILON, max(STRICT_SCORE_EPSILON, float(score))), 4)
 
 
 def _build_openai_client() -> tuple[OpenAI | None, str, str, list[str]]:
@@ -127,7 +134,7 @@ def run() -> int:
                     "error": f"{type(exc).__name__}:{exc}",
                 },
             )
-            scores[task_id] = 0.0
+            scores[task_id] = _strict_score(0.0)
             continue
 
         done = False
@@ -191,7 +198,7 @@ def run() -> int:
             )
 
         try:
-            final_score = round(grade_task(env.state()).score, 4)
+            final_score = _strict_score(grade_task(env.state()).score)
         except Exception as exc:
             _emit(
                 "STEP",
@@ -201,7 +208,7 @@ def run() -> int:
                     "error": f"{type(exc).__name__}:{exc}",
                 },
             )
-            final_score = 0.0
+            final_score = _strict_score(0.0)
         scores[task_id] = final_score
 
     average = round(sum(scores.values()) / max(1, len(scores)), 4)

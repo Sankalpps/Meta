@@ -6,10 +6,17 @@ from typing import Callable, Dict
 from .models import EnvState, Label, Priority
 
 
+STRICT_SCORE_EPSILON = 0.0001
+
+
 @dataclass(frozen=True)
 class GradeResult:
     score: float
     breakdown: Dict[str, float]
+
+
+def _strict_unit_interval(score: float) -> float:
+    return min(1.0 - STRICT_SCORE_EPSILON, max(STRICT_SCORE_EPSILON, score))
 
 
 def _email_map(state: EnvState):
@@ -30,7 +37,7 @@ def grade_easy(state: EnvState) -> GradeResult:
         if invoice.draft_reply and "invoice" in invoice.draft_reply.lower()
         else 0.0,
     }
-    return GradeResult(score=round(sum(checks.values()), 4), breakdown=checks)
+    return GradeResult(score=_strict_unit_interval(round(sum(checks.values()), 4)), breakdown=checks)
 
 
 def grade_medium(state: EnvState) -> GradeResult:
@@ -58,7 +65,7 @@ def grade_medium(state: EnvState) -> GradeResult:
         if digest.archived or digest.label == Label.SPAM
         else 0.0,
     }
-    return GradeResult(score=round(sum(checks.values()), 4), breakdown=checks)
+    return GradeResult(score=_strict_unit_interval(round(sum(checks.values()), 4)), breakdown=checks)
 
 
 def grade_hard(state: EnvState) -> GradeResult:
@@ -87,7 +94,7 @@ def grade_hard(state: EnvState) -> GradeResult:
         else 0.0,
         "newsletter_archived": 0.06 if newsletter.archived else 0.0,
     }
-    return GradeResult(score=round(sum(checks.values()), 4), breakdown=checks)
+    return GradeResult(score=_strict_unit_interval(round(sum(checks.values()), 4)), breakdown=checks)
 
 
 def grade_task(task_id: str, state: EnvState) -> GradeResult:
