@@ -82,6 +82,7 @@ The reward provides dense trajectory-level signal:
 - positive: grader progress delta and vehicles moved
 - penalties: conflicting greens, invalid phases, blocked emergency paths
 - terminal bonus: objective completion with strong score
+- exported `Reward.value` is normalized to the range `0.0` to `1.0`
 
 This supports incremental learning and discourages undesirable policies.
 
@@ -145,9 +146,9 @@ docker build -t openenv-intersection .
 docker run --rm -p 7860:7860 openenv-intersection
 ```
 
-Space URL:
+Space URL template:
 
-- `https://huggingface.co/spaces/Sankalpps/openenv-email-triage`
+- `https://huggingface.co/spaces/<username>/openenv-intersection-emergency`
 
 The current `Dockerfile` launches `openenv_intersection.app:app`.
 

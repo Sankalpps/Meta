@@ -134,7 +134,7 @@ class IntersectionEnv:
             reward_value += 0.1
 
         reward = Reward(
-            value=round(max(-1.0, min(1.0, reward_value)), 4),
+            value=round(max(0.0, min(1.0, reward_value)), 4),
             progress_delta=round(progress_delta, 4),
             components={
                 "vehicles_moved": float(moved),

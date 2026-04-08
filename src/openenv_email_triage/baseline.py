@@ -11,6 +11,9 @@ from .graders import grade_task
 from .models import Action
 
 
+STRICT_SCORE_EPSILON = 0.01
+
+
 SYSTEM_PROMPT = (
     "You are an autonomous email triage assistant. "
     "Return exactly one JSON object for the next action. "
@@ -22,6 +25,10 @@ def _to_jsonable(observation: Any) -> str:
     if hasattr(observation, "model_dump"):
         return json.dumps(observation.model_dump(mode="json"), indent=2)
     return json.dumps(observation, indent=2)
+
+
+def _strict_score(score: float) -> float:
+    return round(min(1.0 - STRICT_SCORE_EPSILON, max(STRICT_SCORE_EPSILON, float(score))), 4)
 
 
 def _choose_action(client: OpenAI, model: str, observation: Any) -> Action:
@@ -69,7 +76,7 @@ def run_baseline(model: str = "gpt-4.1-mini") -> dict[str, float]:
             observation, _reward, done, _info = env.step(action)
 
         final_score = grade_task(task_id, env.state()).score
-        scores[task_id] = round(final_score, 4)
+        scores[task_id] = _strict_score(final_score)
 
     scores["average"] = round(sum(scores.values()) / len(scores), 4)
     return scores

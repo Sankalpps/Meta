@@ -23,7 +23,7 @@ def _email_map(state: EnvState):
     return {email.id: email for email in state.inbox}
 
 
-def grade_easy(state: EnvState) -> GradeResult:
+def _grade_easy_result(state: EnvState) -> GradeResult:
     emails = _email_map(state)
     spam = emails["e1"]
     invoice = emails["e2"]
@@ -40,7 +40,7 @@ def grade_easy(state: EnvState) -> GradeResult:
     return GradeResult(score=_strict_unit_interval(round(sum(checks.values()), 4)), breakdown=checks)
 
 
-def grade_medium(state: EnvState) -> GradeResult:
+def _grade_medium_result(state: EnvState) -> GradeResult:
     emails = _email_map(state)
     outage = emails["m1"]
     sales = emails["m2"]
@@ -68,7 +68,7 @@ def grade_medium(state: EnvState) -> GradeResult:
     return GradeResult(score=_strict_unit_interval(round(sum(checks.values()), 4)), breakdown=checks)
 
 
-def grade_hard(state: EnvState) -> GradeResult:
+def _grade_hard_result(state: EnvState) -> GradeResult:
     emails = _email_map(state)
     phish = emails["h1"]
     legal = emails["h2"]
@@ -97,10 +97,22 @@ def grade_hard(state: EnvState) -> GradeResult:
     return GradeResult(score=_strict_unit_interval(round(sum(checks.values()), 4)), breakdown=checks)
 
 
+def grade_easy(state: EnvState) -> float:
+    return _grade_easy_result(state).score
+
+
+def grade_medium(state: EnvState) -> float:
+    return _grade_medium_result(state).score
+
+
+def grade_hard(state: EnvState) -> float:
+    return _grade_hard_result(state).score
+
+
 def grade_task(task_id: str, state: EnvState) -> GradeResult:
     graders: Dict[str, Callable[[EnvState], GradeResult]] = {
-        "easy_invoice_spam": grade_easy,
-        "medium_ops_queue": grade_medium,
-        "hard_risk_and_vip": grade_hard,
+        "easy_invoice_spam": _grade_easy_result,
+        "medium_ops_queue": _grade_medium_result,
+        "hard_risk_and_vip": _grade_hard_result,
     }
     return graders[task_id](state)

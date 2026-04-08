@@ -46,3 +46,35 @@ def test_emergency_preempt_improves_progress() -> None:
     state = env.state()
     assert any(e.crossed for e in state.emergency_vehicles)
     assert state.safety_violations == 0
+
+
+def test_reward_stays_in_unit_interval() -> None:
+    env = IntersectionEnv("hard_dual_emergency_wave")
+    env.reset()
+
+    # Alternate safe and conflicting phases to stress both positive/negative shaping terms.
+    actions = [
+        Action(action_type="hold", hold_steps=1),
+        Action(
+            action_type="set_phase",
+            signal_actions=[
+                SignalAction(direction=Direction.NORTH, light=LightState.GREEN),
+                SignalAction(direction=Direction.SOUTH, light=LightState.GREEN),
+                SignalAction(direction=Direction.EAST, light=LightState.GREEN),
+                SignalAction(direction=Direction.WEST, light=LightState.RED),
+            ],
+        ),
+        Action(
+            action_type="set_phase",
+            signal_actions=[
+                SignalAction(direction=Direction.NORTH, light=LightState.RED),
+                SignalAction(direction=Direction.SOUTH, light=LightState.RED),
+                SignalAction(direction=Direction.EAST, light=LightState.GREEN),
+                SignalAction(direction=Direction.WEST, light=LightState.GREEN),
+            ],
+        ),
+    ]
+
+    for i in range(12):
+        _, reward, _, _ = env.step(actions[i % len(actions)])
+        assert 0.0 <= reward.value <= 1.0

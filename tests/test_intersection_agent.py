@@ -2,6 +2,7 @@ from fastapi.testclient import TestClient
 
 from openenv_intersection.agent import IntersectionAgent
 from openenv_intersection.app import app
+from openenv_intersection.baseline import run_baseline
 from openenv_intersection.models import ActionType
 
 
@@ -68,3 +69,10 @@ def test_reset_get_supported_for_validator_ping() -> None:
     client = TestClient(app)
     response = client.get("/reset?task_id=easy_single_ambulance")
     assert response.status_code == 200
+
+
+def test_baseline_scores_reproducible_without_openai(monkeypatch) -> None:
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    first = run_baseline(model="gpt-4.1-mini")
+    second = run_baseline(model="gpt-4.1-mini")
+    assert first == second

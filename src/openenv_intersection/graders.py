@@ -40,13 +40,17 @@ def grade_task(state: EnvState) -> GradeResult:
     return GradeResult(score=score, breakdown=components)
 
 
-def grade_easy_single_ambulance(state: EnvState) -> GradeResult:
-    return grade_task(state)
+def _score_only(state: EnvState) -> float:
+    return grade_task(state).score
 
 
-def grade_medium_peak_with_firetruck(state: EnvState) -> GradeResult:
-    return grade_task(state)
+def grade_easy_single_ambulance(state: EnvState) -> float:
+    return _score_only(state)
 
 
-def grade_hard_dual_emergency_wave(state: EnvState) -> GradeResult:
-    return grade_task(state)
+def grade_medium_peak_with_firetruck(state: EnvState) -> float:
+    return _score_only(state)
+
+
+def grade_hard_dual_emergency_wave(state: EnvState) -> float:
+    return _score_only(state)

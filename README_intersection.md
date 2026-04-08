@@ -51,6 +51,7 @@ Dense shaping encourages incremental progress:
 - positive reward for throughput and grader progress delta
 - penalties for conflicting greens (safety), invalid phases, and emergency blocking
 - terminal bonus for achieving high score after emergency clearance
+- exported `Reward.value` is normalized to `0.0` to `1.0`
 
 ## Baseline
 
