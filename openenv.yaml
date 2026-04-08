@@ -1,35 +1,35 @@
-name: openenv-intersection-emergency
+name: openenv-email-triage
 version: 0.1.0
-description: Multi-agent 4-way traffic intersection control with emergency vehicle prioritization.
+description: Email triage environment for prioritizing and routing incoming emails to appropriate teams.
 license: mit
 tags:
   - openenv
-  - traffic-control
-  - multi-agent
-  - emergency-priority
-entrypoint: src/openenv_intersection/environment.py:IntersectionEnv
+  - email-management
+  - multi-label
+  - routing
+entrypoint: src/openenv_email_triage/environment.py:EmailTriageEnv
 api:
   reset: true
   step: true
   state: true
 models:
-  observation: src/openenv_intersection/models.py:Observation
-  action: src/openenv_intersection/models.py:Action
-  reward: src/openenv_intersection/models.py:Reward
+  observation: src/openenv_email_triage/models.py:Observation
+  action: src/openenv_email_triage/models.py:Action
+  reward: src/openenv_email_triage/models.py:Reward
 tasks:
-  - id: easy_single_ambulance
+  - id: easy_invoice_spam
     difficulty: easy
-    grader: src/openenv_intersection/graders.py:grade_easy_single_ambulance
-  - id: medium_peak_with_firetruck
+    grader: src/openenv_email_triage/graders.py:grade_easy
+  - id: medium_ops_queue
     difficulty: medium
-    grader: src/openenv_intersection/graders.py:grade_medium_peak_with_firetruck
-  - id: hard_dual_emergency_wave
+    grader: src/openenv_email_triage/graders.py:grade_medium
+  - id: hard_risk_and_vip
     difficulty: hard
-    grader: src/openenv_intersection/graders.py:grade_hard_dual_emergency_wave
+    grader: src/openenv_email_triage/graders.py:grade_hard
 runtime:
-  deterministic: true
-  max_steps_default: 24
+  deterministic: false
+  max_steps_default: 10
 deployment:
   platform: huggingface-spaces
   sdk: docker
-  app_file: src/openenv_intersection/app.py
+  app_file: src/openenv_email_triage/app.py
