@@ -1,5 +1,6 @@
 FROM python:3.11-slim
 
+# OpenEnv Intersection: 3-way traffic control with emergency vehicle prioritization
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PORT=7860
